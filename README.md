@@ -12,10 +12,9 @@ Geological contour map generation is a fundamental task in spatial analysis and 
 
 The software implementation corresponds directly to the methodology described in the associated manuscript:
 
-- Natural language parsing and task decomposition: Section 3.1
-- Multi-agent orchestration based on the Model Context Protocol (MCP): Section 3.2
-- Geostatistical modeling and Kriging interpolation: Section 3.3
-- Contour map generation and visualization: Section 3.4
+- Natural language parsing and task decomposition: Section 2.1
+- Multi-agent orchestration (based on MCP): Section 2.2
+- Contour map generation and visualization: Section 2.3
 
 ## Software Architecture
 
@@ -30,17 +29,15 @@ The two components communicate via RESTful APIs using JSON-formatted messages.
 
 The project consists of the following repositories:
 
-- Java frontend: https://github.com/xxx/contouragent-frontend-java
-- Python backend: https://github.com/xxx/contouragent-backend-python
+- Java frontend: https://github.com/llt99/contouragent-frontend-java
+- Python backend: https://github.com/llt99/contouragent-backend-python
 
 ## Requirements and Dependencies
 
 ### Python Backend
-- Python 3.9 or later
-- numpy
-- scipy
-- pykrige
-- shapely
+- Python 3.8 or later
+- All dependencies listed in `requirements.txt` (e.g., `numpy`, `scipy`, `pykrige`, `shapely`, etc.)
+
 
 ### Java Frontend
 - Java 17 or later
