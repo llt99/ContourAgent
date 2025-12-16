@@ -40,7 +40,7 @@ The project consists of the following repositories:
 
 
 ### Java Frontend
-- Java 17 or later
+- Java 11 or later
 - Maven
 
 
