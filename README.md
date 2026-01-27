@@ -73,9 +73,21 @@ ContourAgent/
 
 ---
 
-##  5. Requirements
+##  5. Data Privacy and Test Datasets
 
-### 5.1 Backend (Python)
+**Note on Data Confidentiality:**
+Due to strict confidentiality agreements and intellectual property protections regarding the geological exploration data used in the associated manuscript, the original raw field datasets are **not included** in this repository.
+
+**Synthetic Test Data:**
+To facilitate reproducibility and code verification, this repository includes **synthetic/desensitized test datasets**.
+* These datasets mimic the structure (schema) and statistical characteristics of real geological data.
+* They allow users to execute the full pipeline—from natural language parsing to contour generation—without requiring access to sensitive proprietary information.
+
+---
+
+##  6. Requirements
+
+### 6.1 Backend (Python)
 * **Python 3.11**
 * Key dependencies (`requirements.txt`):
     * `numpy`
@@ -84,15 +96,15 @@ ContourAgent/
     * `shapely`
     * `matplotlib`
 
-### 5.2 Frontend (Node.js)
+### 6.2 Frontend (Node.js)
 * **Node.js 22+**
 * npm
 
 ---
 
-##  6. Usage Guide
+##  7. Usage Guide
 
-### 6.1 Start Backend (Python)
+### 7.1 Start Backend (Python)
 The backend API server must be running to process requests.
 
 ```bash
@@ -100,7 +112,7 @@ pip install -r requirements.txt
 python api.py
 ```
 
-### 6.2 Frontend Quick Test (HTML)
+### 7.2 Frontend Quick Test (HTML)
 For rapid testing without launching the full frontend development environment, a lightweight HTML-based interface is provided.
 
 ```bash
@@ -110,7 +122,7 @@ python start_http_server.py
 >
 > **Warning:** Do not open the HTML file directly using the `file://` protocol to avoid CORS issues.
 
-### 6.3 Frontend Development Mode (npm)
+### 7.3 Frontend Development Mode (npm)
 For full frontend features:
 
 ```bash
@@ -122,7 +134,7 @@ npm run dev
 
 ---
 
-##  7. Reproducibility and Extensibility
+##  8. Reproducibility and Extensibility
 
 * **Traceability:** All task parsing results, agent decisions, and interpolation parameters are recorded in structured form.
 * **Extensibility:** The modular multi-agent design allows easy extension, including:
@@ -132,7 +144,7 @@ npm run dev
 
 ---
 
-##  8. Intended Use
+##  9. Intended Use
 
 ContourAgent is designed for:
 * Geological and sedimentological research.
@@ -141,6 +153,6 @@ ContourAgent is designed for:
 
 *The system is intended to assist rather than replace geological expertise, providing a reproducible and extensible computational framework for expert knowledge formalization.*
 
-## 9. License
+## 10. License
 
 This project is released under the MIT License.
