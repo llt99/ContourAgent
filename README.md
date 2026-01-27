@@ -85,7 +85,7 @@ ContourAgent/
     * `matplotlib`
 
 ### 5.2 Frontend (Node.js)
-* **Node.js 18+**
+* **Node.js 22+**
 * npm
 
 ---
