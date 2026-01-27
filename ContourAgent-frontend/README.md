@@ -77,9 +77,12 @@ These libraries collectively support interactive mapping, visualization, and dat
 │   ├── views/              # Page-level components (e.g., AgentMapping.vue)
 │   ├── App.vue             # Root component
 │   └── main.js             # Application entry point
+├── test-quick.html        # Lightweight HTML interface for quick testing
+├── start_http_server.py   # Python script to serve test-quick.html
 ├── index.html
 ├── package.json
-└── vite.config.js
+├── vite.config.js
+└── ...
 ```
 
 ## Requirements and Installation
