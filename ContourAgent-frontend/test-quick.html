@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContourAgent Quick Test - OpenLayers</title>
+
+    <!-- OpenLayers CSS and JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.3.0/ol.css">
+    <script src="https://cdn.jsdelivr.net/npm/ol@v7.3.0/dist/ol.js"></script>
+    <!-- SheetJS for Excel parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* 地图容器样式 */
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(240, 242, 245, 0.9);
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+
+        .page {
+            width: 100%;
+            display: flex;
+            height: 95vh;
+            gap: 12px;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        .qa-card {
+            flex: 1;
+            max-width: 33%;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .map-card {
+            flex: 2;
+            position: relative;
+            background: #f0f2f5;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header-with-history {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #333;
+            margin: 0;
+        }
+
+        .history-btn {
+            padding: 6px 10px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            z-index: 101;
+        }
+
+        .chat-box {
+            position: relative;
+            display: flex;
+            height: calc(100vh - 4rem);
+            flex: 1;
+            overflow-y: auto;
+            background: #fdfdfd;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2px;
+            max-height: 100%;
+        }
+
+        .msg {
+            display: flex;
+            margin-bottom: 8px;
+            word-break: break-word;
+            padding: 6px 12px;
+            border-radius: 10px;
+        }
+
+        /* assistant：头像在左，内容在右 */
+        .msg.assistant {
+            justify-content: flex-start;
+            flex-direction: row;
+        }
+
+        /* user：内容在左，头像在右 */
+        .msg.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+            justify-content: flex-start;
+            //text-align: right;
+        }
+
+        /* 头像统一样式 */
+        .role-label {
+            font-size: 20px;
+            line-height: 1;
+            margin: 0 6px;
+        }
+
+
+        .text {
+            display:inline-block;
+            background:#e0f0ff;
+            padding:8px 12px;
+            border-radius:10px;
+            max-width:80%;
+            white-space:pre-wrap;
+            word-wrap:break-word;
+        }
+
+        .input-area {
+            display:flex;
+            gap:10px;
+        }
+
+        input[type="text"] {
+            flex:1;
+            padding:10px;
+            border-radius:10px;
+            border:1px solid #ccc;
+            font-size:14px;
+        }
+
+        button {
+            padding:10px 16px;
+            background:#007bff;
+            color:#fff;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+            font-size:14px;
+        }
+
+        button:hover {
+            background:#0056b3;
+        }
+
+        .chat-image img {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        .history-panel {
+            position: absolute;
+            top: 0;
+            width: 280px;
+            background: #fff;
+            border-radius: 0 12px 12px 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            padding: 12px;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .legend-card-vertical {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .map-download-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1001;
+            background: #cecece;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .preview-overlay {
+            position:fixed;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            background:rgba(0,0,0,0.8);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:9999;
+        }
+
+        .preview-img {
+            max-width:90%;
+            max-height:90%;
+            border-radius:8px;
+        }
+
+        .circle-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #007bff;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .circle-btn:hover {
+            background: #0056b3;
+        }
+
+        /* 测试提示 */
+        .test-hint {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #856404;
+        }
+
+        .test-hint strong {
+            color: #856404;
+        }
+
+        .test-status {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin: 4px 0;
+            font-size: 11px;
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .test-status.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .test-status.loading {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="qa-card">
+        <div class="header-with-history">
+            <button class="history-btn" onclick="toggleHistory()">📜</button>
+            <h2 class="title">GeoContour AI</h2>
+        </div>
+
+        <!-- 测试提示 -->
+        <div class="test-hint">
+            <strong>💡 Test Hint:</strong> Enter a mapping task below, for example: “Draw the coal rock distribution map of the Longtan Formation in the Sichuan Basin.”"
+        </div>
+
+        <!-- 测试状态显示 -->
+        <div id="testStatus" style="display: none;"></div>
+
+        <div class="chat-box" ref="chatBox">
+            <div v-if="showHistory" class="history-panel" style="display: none;">
+                <h4 class="font-bold mb-4">History</h4>
+                <ul id="historyList">
+                    <!-- 动态生成历史记录 -->
+                </ul>
+            </div>
+
+            <div class="messages" id="chatMessages">
+                <div class="msg assistant">
+                    <span class="role-label">🤖</span>
+                    <div class="text">Hello, I am the Geological Contour Map Intelligent Assistant. Please describe your mapping request, for example: "Draw the coal rock distribution map of the Longtan Formation in the Sichuan Basin."</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none" onchange="handleFileUpload(event)"/>
+            <button class="circle-btn" onclick="document.getElementById('fileInput').click()" title="上传Excel文件">+</button>
+            <input type="text" id="userInput" placeholder="Please enter your mapping request..." onkeypress="if(event.key==='Enter') sendMessage()"/>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <div class="map-card" id="mapContainer">
+        <div id="map"></div>
+        <div class="map-overlay" id="mapOverlay">
+            <div>🗺️ 地图加载中...<br><small>等待生成等值线图</small></div>
+        </div>
+        <button class="map-download-btn" onclick="downloadMap()">⬇ ADD MAP</button>
+<!--        <div class="legend-card-vertical" id="legendCard" style="display: none;">-->
+<!--            <div class="legend-title">Legend</div>-->
+<!--            <div class="legend-content" id="legendContent"></div>-->
+<!--        </div>-->
+    </div>
+</div>
+
+<script>
+    // 全局变量
+
+    // import ol from "ol/dist/ol.js";
+
+    const API_BASE = 'http://127.0.0.1:8000';
+    let currentImage = null;
+    let showHistory = false;
+    let historyList = [];
+    let map = null;
+    let offlineLayer = null;
+
+    // 初始化离线地图（使用OpenLayers）
+    function initOfflineMap() {
+        console.log('🔍 检查OpenLayers库:', typeof ol);
+        console.log('🔍 检查地图容器:', document.getElementById('map'));
+
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) {
+            console.error('❌ 地图容器不存在');
+            return;
+        }
+
+        if (map) {
+            console.log('⚠️ 地图已存在，跳过初始化');
+            return;
+        }
+
+        console.log('开始初始化OpenLayers地图...');
+
+        try {
+            // 检查OpenLayers是否加载
+            if (typeof ol === 'undefined') {
+                throw new Error('OpenLayers库未加载，请检查网络连接');
+            }
+
+            // 创建离线瓦片图层
+            const tileLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: '/public/tiles/{z}/{x}/{y}.png'
+                })
+            });
+
+            map = new ol.Map({
+                target: 'map',
+                layers: [tileLayer],
+                view: new ol.View({
+                    projection: 'EPSG:3857',
+                    center: ol.proj.fromLonLat([106.5, 30.35]),
+                    zoom: 7.8
+                })
+            });
+
+
+            console.log('✅ OpenLayers地图创建成功');
+
+            // 监听地图加载事件
+            map.on('loadstart', function() {
+                console.log('🔄 地图开始加载...');
+            });
+
+            map.on('loadend', function() {
+                console.log('✅ 地图加载完成');
+                const overlay = document.getElementById('mapOverlay');
+                if (overlay) {
+                    overlay.style.display = 'none';
+                }
+            });
+
+            // 监听瓦片加载错误
+            tileLayer.getSource().on('tileloaderror', function(event) {
+                console.warn('⚠️ 瓦片加载失败:', event.tile.getImage().src);
+            });
+
+            // 监听瓦片加载成功
+            tileLayer.getSource().on('tileloadend', function(event) {
+                console.log('✅ 瓦片加载成功:', event.tile.getImage().src);
+            });
+
+            // 测试一个具体的瓦片URL
+            const testUrl = '/tiles/10/800/407.png';
+            console.log('测试瓦片URL:', testUrl);
+
+            // 尝试预加载一个瓦片来验证路径
+            fetch(testUrl, { method: 'HEAD' })
+                .then(response => {
+                    console.log('测试瓦片响应状态:', response.status);
+                    if (response.ok) {
+                        console.log('✅ 瓦片文件可访问');
+                    } else {
+                        console.warn('❌ 瓦片文件不可访问，状态:', response.status);
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ 瓦片文件访问失败:', err);
+                });
+
+            // 显示地图容器
+            mapContainer.style.display = 'block';
+            console.log('✅ 离线地图已初始化完成');
+
+        } catch (error) {
+            console.error('❌ 地图初始化失败:', error);
+            console.error('错误详情:', error.message, error.stack);
+            // 如果初始化失败，显示提示信息
+            const overlay = document.getElementById('mapOverlay');
+            if (overlay) {
+                overlay.innerHTML = `<div>⚠️ 地图初始化失败<br><small>${error.message}</small></div>`;
+                overlay.style.display = 'flex';
+            }
+        }
+    }
+
+    // 在地图上显示GeoJSON等值线
+    function displayGeoJSONOnMap(geojson, dataRows = []) {
+        if (!map || !geojson) {
+            console.warn('❌ 地图或GeoJSON数据为空', { map: !!map, geojson: !!geojson });
+            return false;
+        }
+
+        console.log('🔄 开始渲染GeoJSON(原始输入):', geojson);
+
+        // ✅ 1) 兼容后端返回外壳：{ map: FeatureCollection }
+        if (geojson && !geojson.type && geojson.map && geojson.map.type) {
+            console.warn('⚠️ GeoJSON 外层包含 map，已自动解包到 geojson.map');
+            geojson = geojson.map;
+        }
+
+        // ✅ 2) 兼容字符串
+        if (typeof geojson === 'string') {
+            try {
+                geojson = JSON.parse(geojson);
+                console.warn('⚠️ GeoJSON 为字符串，已自动 JSON.parse');
+            } catch (e) {
+                console.error('❌ GeoJSON字符串解析失败:', e, geojson);
+                return false;
+            }
+        }
+
+        // ✅ 3) 严格校验
+        if (!geojson || typeof geojson !== 'object') {
+            console.error('❌ GeoJSON不是对象:', typeof geojson, geojson);
+            return false;
+        }
+        if (!geojson.type) {
+            console.error('❌ GeoJSON缺少type属性:', geojson);
+            return false;
+        }
+        if (!geojson.features || !Array.isArray(geojson.features)) {
+            console.error('❌ GeoJSON缺少features或features不是数组:', geojson);
+            return false;
+        }
+
+        console.log('✅ 最终用于渲染的 GeoJSON.type =', geojson.type, 'features:', geojson.features.length);
+
+        // ✅ 4) 清除现有图层（保留底图瓦片图层 index=0）
+        const layers = map.getLayers().getArray();
+        for (let i = layers.length - 1; i > 0; i--) {
+            map.removeLayer(layers[i]);
+        }
+
+        // ✅ 工具：#RRGGBB -> rgba
+        function hexToRgba(hex, alpha = 0.8) {
+            if (!hex || typeof hex !== 'string') return `rgba(255,0,0,${alpha})`;
+            if (hex.startsWith('rgb')) return hex;
+
+            const h = hex.replace('#', '');
+            const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+            if (full.length !== 6) return `rgba(255,0,0,${alpha})`;
+
+            const r = parseInt(full.slice(0, 2), 16);
+            const g = parseInt(full.slice(2, 4), 16);
+            const b = parseInt(full.slice(4, 6), 16);
+            if ([r, g, b].some(Number.isNaN)) return `rgba(255,0,0,${alpha})`;
+
+            return `rgba(${r},${g},${b},${alpha})`;
+        }
+
+        try {
+            // ✅ 5) 读取 GeoJSON 面要素（EPSG:4326 -> EPSG:3857）
+            const polygonFeatures = new ol.format.GeoJSON().readFeatures(geojson, {
+                featureProjection: 'EPSG:3857',
+                dataProjection: 'EPSG:4326'
+            });
+
+            const polygonSource = new ol.source.Vector({ features: polygonFeatures });
+            console.log('✅ 面要素读取成功:', polygonFeatures.length);
+
+            // ✅ 6) 从 dataRows 构建井点要素（注意：手动创建点要自己投影转换）
+            const pointFeatures = [];
+            if (Array.isArray(dataRows) && dataRows.length > 0) {
+                for (const r of dataRows) {
+                    if (!r) continue;
+                    if (r.lon == null || r.lat == null) continue;
+
+                    const lon = Number(r.lon);
+                    const lat = Number(r.lat);
+                    if (Number.isNaN(lon) || Number.isNaN(lat)) continue;
+
+                    const f = new ol.Feature({
+                        geometry: new ol.geom.Point(ol.proj.fromLonLat([lon, lat])),
+                        // ✅ 井名字段
+                        name: r.well_name,
+                        well_name: r.well_name,
+                        // ✅ 你想显示的数值（这里用地层厚度）
+                        value: r.stratum_thickness,
+                        stratum: r.stratum_name
+                    });
+                    pointFeatures.push(f);
+                }
+                console.log('✅ 井点要素构建成功:', pointFeatures.length);
+            } else {
+                console.warn('⚠️ dataRows 为空：不会显示井点');
+            }
+
+            const pointSource = new ol.source.Vector({ features: pointFeatures });
+
+            // ✅ 7) 面图层（等值线面），使用后端 properties.fill 渲染
+            const polygonLayer = new ol.layer.Vector({
+                source: polygonSource,
+                zIndex: 10,
+                style: function(feature) {
+                    // 后端返回的是 fill（你贴出来的就是 properties.fill）
+                    const fillHex = feature.get('fill') || feature.get('color') || '#ff0000';
+                    const v = feature.get('value');
+
+                    const label = (v === null || v === undefined || Number.isNaN(Number(v)))
+                        ? ''
+                        : Number(v).toFixed(2);
+
+                    return new ol.style.Style({
+                        fill: new ol.style.Fill({
+                            // ✅ 建议 0.2~0.35，不要 1（会遮挡点/底图）
+                            color: hexToRgba(fillHex, 0.8)
+                        }),
+                        stroke: new ol.style.Stroke({
+                            color: fillHex,
+                            width: 2
+                        }),
+                        // 面标签：不想要可把 text 这段删掉
+                        // text: new ol.style.Text({
+                        //     text: label,
+                        //     font: '12px Arial',
+                        //     fill: new ol.style.Fill({ color: '#000' }),
+                        //     stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
+                        // })
+                    });
+                }
+            });
+
+            // ✅ 8) 点图层（井点 + 井名），永远盖在面之上
+            const pointLayer = new ol.layer.Vector({
+                source: pointSource,
+                zIndex: 20,
+                style: function(feature) {
+                    const wellName = feature.get('well_name') || feature.get('name') || '';
+                    const v = feature.get('value');
+                    const vText = (v === null || v === undefined || Number.isNaN(Number(v))) ? '' : Number(v).toFixed(2);
+
+                    // 你可以只显示井名：const label = wellName;
+                    const label = wellName ? (vText ? `${wellName}  ${vText}` : `${wellName}`) : (vText ? vText : '');
+
+                    return new ol.style.Style({
+                        image: new ol.style.Circle({
+                            radius: 4,
+                            fill: new ol.style.Fill({ color: '#ff0000' }),
+                            stroke: new ol.style.Stroke({ color: '#ffffff', width: 1 })
+                        }),
+                        text: new ol.style.Text({
+                            text: label,
+                            font: '12px Arial',
+                            fill: new ol.style.Fill({ color: '#000' }),
+                            stroke: new ol.style.Stroke({ color: '#fff', width: 3 }),
+                            offsetY: -12
+                        })
+                    });
+                }
+            });
+
+            // ✅ 9) 添加图层（先面后点）
+            map.addLayer(polygonLayer);
+            map.addLayer(pointLayer);
+
+            // ✅ 10) 视图 fit：用“面+点”的联合范围（更稳）
+            const extentPoly = polygonSource.getExtent();
+            const extentPoint = pointSource.getExtent();
+
+            let extent = extentPoly;
+            if (!ol.extent.isEmpty(extentPoint)) {
+                extent = ol.extent.extend(extent, extentPoint);
+            }
+
+            if (ol.extent.isEmpty(extent)) {
+                console.warn('⚠️ 数据范围为空，无法fit；保持当前视图');
+            } else {
+                console.log('📍 数据范围:', extent);
+                map.getView().fit(extent, {
+                    padding: [50, 50, 50, 50],
+                    duration: 800,
+                    maxZoom: 12
+                });
+            }
+
+            // ✅ 11) 隐藏覆盖层
+            const overlay = document.getElementById('mapOverlay');
+            if (overlay) overlay.style.display = 'none';
+
+            console.log('✅ GeoJSON面 + 井点 已成功显示在地图上');
+            return true;
+
+        } catch (error) {
+            console.error('❌ GeoJSON渲染失败:', error);
+            console.error('错误详情:', error.message, error.stack);
+            return false;
+        }
+    }
+
+    // 显示图像在地图上（覆盖方式）
+    function displayImageOnMap(base64Str) {
+        if (!map) return;
+
+        // 清除现有图层（保留瓦片图层）
+        const layers = map.getLayers().getArray();
+        const tileLayer = layers[0]; // 瓦片图层是第一个
+
+        // 移除其他图层
+        for (let i = layers.length - 1; i > 0; i--) {
+            map.removeLayer(layers[i]);
+        }
+
+        // 创建图像覆盖
+        // const imageLayer = new ol.layer.Image({
+        //     source: new ol.source.ImageStatic({
+        //         url: `data:image/png;base64,${base64Str}`,
+        //         imageExtent: [103.0, 28.0, 107.0, 32.0], // 四川盆地大致范围
+        //         projection: 'EPSG:4326'
+        //     }),
+        //     opacity: 0.8
+        // });
+
+        // map.addLayer(imageLayer);
+
+        // 调整视图
+        map.getView().fit([103.0, 28.0, 107.0, 32.0], {
+            padding: [20, 20, 20, 20],
+            duration: 500
+        });
+
+        // 隐藏覆盖层
+        const overlay = document.getElementById('mapOverlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+
+        console.log('✅ 图像已显示在地图上');
+    }
+
+    // 显示测试状态
+    function showTestStatus(message, type = 'loading') {
+        const statusEl = document.getElementById('testStatus');
+        statusEl.textContent = message;
+        statusEl.className = 'test-status ' + type;
+        statusEl.style.display = 'block';
+
+        // 3秒后自动隐藏
+        setTimeout(() => {
+            statusEl.style.display = 'none';
+        }, 3000);
+    }
+
+    // 添加消息到聊天界面
+    function addMessage(role, text, type = 'text', imageSrc = null) {
+        const chatMessages = document.getElementById('chatMessages');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `msg ${role}`;
+
+        let content = '';
+        if (type === 'image' && imageSrc) {
+            let imgBase64 = imageSrc;
+            if (typeof imageSrc === 'object') {
+                const keys = Object.keys(imageSrc);
+                if (keys.length > 0) {
+                    imgBase64 = imageSrc[keys[0]];
+                }
+            }
+            content = `<span class="role-label">${role === 'user' ? '🧑' : '🤖'}</span>
+                           <div class="chat-image">
+                               <img src="data:image/png;base64,${imgBase64}" 
+                                    style="max-width:200px; max-height:150px; border-radius:4px; cursor:pointer;"
+                                    onclick="previewImage('${imgBase64}')">
+                           </div>`;
+
+            // 同时在右侧地图区域显示大图
+            // displayMapInRightPanel(imgBase64);
+        } else {
+            content = `<span class="role-label">${role === 'user' ? '🧑' : '🤖'}</span>
+                           <div class="text">${text}</div>`;
+        }
+
+        msgDiv.innerHTML = content;
+        chatMessages.appendChild(msgDiv);
+
+        // 滚动到底部
+        const chatBox = document.querySelector('.chat-box');
+        if (chatBox) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    }
+
+    // 在右侧地图区域显示图像
+    function displayMapInRightPanel(base64Str) {
+        const mapContainer = document.getElementById('mapContainer');
+
+        // 清除现有内容（保留下载按钮和图例）
+        const existingImg = mapContainer.querySelector('.map-display-image');
+        if (existingImg) {
+            existingImg.remove();
+        }
+
+        // 创建图像元素
+        const img = document.createElement('img');
+        img.src = `data:image/png;base64,${base64Str}`;
+        img.className = 'map-display-image';
+        img.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                max-width: 90%;
+                max-height: 90%;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                cursor: pointer;
+                z-index: 10;
+            `;
+        img.onclick = () => previewImage(base64Str);
+
+        mapContainer.appendChild(img);
+    }
+
+    // 更新图例
+    function updateLegend(geojson) {
+        const legendCard = document.getElementById('legendCard');
+        const legendContent = document.getElementById('legendContent');
+
+        if (!legendCard || !legendContent) {
+            console.warn('⚠️ 找不到 legendCard 或 legendContent');
+            return;
+        }
+
+        // 兼容 {map:{...}} 包装
+        if (geojson && !geojson.type && geojson.map && geojson.map.type) {
+            geojson = geojson.map;
+        }
+
+        // 兼容字符串
+        if (typeof geojson === 'string') {
+            try {
+                geojson = JSON.parse(geojson);
+            } catch (e) {
+                console.warn('⚠️ 图例解析GeoJSON字符串失败');
+                legendCard.style.display = 'none';
+                return;
+            }
+        }
+
+        // 基本校验
+        if (!geojson || !Array.isArray(geojson.features) || geojson.features.length === 0) {
+            legendCard.style.display = 'none';
+            return;
+        }
+
+        // 从 features 收集 (value, fill)，只对 Polygon/MultiPolygon 生成图例
+        const raw = [];
+        for (const f of geojson.features) {
+            const gType = f?.geometry?.type;
+            const isPolygon = (gType === 'Polygon' || gType === 'MultiPolygon');
+            if (!isPolygon) continue;
+
+            const p = f?.properties || {};
+            const value = p.value;
+            const fill = p.fill || p.color;
+
+            if (value === null || value === undefined) continue;
+            if (!fill) continue;
+
+            const vNum = Number(value);
+            if (Number.isNaN(vNum)) continue;
+
+            raw.push({ value: vNum, fill: String(fill) });
+        }
+
+        if (raw.length === 0) {
+            console.warn('⚠️ features 中没有可用于图例的 (value, fill)');
+            legendCard.style.display = 'none';
+            return;
+        }
+
+        // 去重（同色同值合并），并按 value 排序
+        const uniqMap = new Map();
+        for (const it of raw) {
+            const key = `${it.fill}|${it.value.toFixed(6)}`;
+            if (!uniqMap.has(key)) uniqMap.set(key, it);
+        }
+        const uniq = Array.from(uniqMap.values()).sort((a, b) => b.value - a.value);
+
+        // 生成 HTML（inline style 强制色块可见）
+        legendContent.innerHTML = uniq.map(it => {
+            const label = Number.isFinite(it.value) ? it.value.toFixed(2) : String(it.value);
+            const color = it.fill;
+
+            return `
+          <div style="display:flex; align-items:center; gap:8px; margin:6px 0;">
+            <span style="
+              display:inline-block;
+              width:14px;
+              height:14px;
+              border-radius:3px;
+              border:1px solid rgba(0,0,0,0.25);
+              background:${color};
+              flex:0 0 auto;
+            "></span>
+            <span style="font-size:12px; line-height:14px;">${label}</span>
+          </div>
+        `;
+        }).join('');
+
+        // 显示图例卡片
+        legendCard.style.display = 'block';
+    }
+
+
+    // 更新历史列表
+    function updateHistoryList(history) {
+        const historyListEl = document.getElementById('historyList');
+        historyListEl.innerHTML = '';
+
+        history.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.style.cssText = 'margin-bottom: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: background 0.2s;';
+            li.innerHTML = `
+                    <div style="font-size: 10px; color: #666;">${item.timestamp || '未知时间'}</div>
+                    <div style="font-size: 11px; color: #333;">${item.text || '无描述'}</div>
+                `;
+            li.onclick = () => {
+                document.getElementById('userInput').value = item.text;
+                toggleHistory();
+            };
+            li.onmouseover = () => li.style.background = '#f5f5f5';
+            li.onmouseout = () => li.style.background = 'transparent';
+            historyListEl.appendChild(li);
+        });
+
+        historyList = history;
+    }
+
+    // 切换历史面板
+    function toggleHistory() {
+        showHistory = !showHistory;
+        const historyPanel = document.querySelector('.history-panel');
+        if (historyPanel) {
+            historyPanel.style.display = showHistory ? 'block' : 'none';
+        }
+
+        // 如果打开历史面板，获取历史记录
+        if (showHistory) {
+            getHistory();
+        }
+    }
+
+    // 预览图像
+    function previewImage(base64Str) {
+        const overlay = document.createElement('div');
+        overlay.className = 'preview-overlay';
+        overlay.innerHTML = `<img src="data:image/png;base64,${base64Str}" class="preview-img">`;
+        overlay.onclick = () => overlay.remove();
+        document.body.appendChild(overlay);
+    }
+
+    // 下载地图
+    function downloadMap() {
+        if (!currentImage) {
+            alert('没有可下载的地图！');
+            return;
+        }
+
+        let base64Str = currentImage;
+        if (typeof currentImage === 'object') {
+            const keys = Object.keys(currentImage);
+            if (keys.length > 0) {
+                base64Str = currentImage[keys[0]];
+            }
+        }
+
+        const link = document.createElement('a');
+        link.href = `data:image/png;base64,${base64Str}`;
+        link.download = `contour_map_${Date.now()}.png`;
+        link.click();
+    }
+
+    // 获取历史记录
+    async function getHistory() {
+        try {
+            const response = await fetch(`${API_BASE}/history?limit=10`);
+            const data = await response.json();
+
+            if (response.ok) {
+                const history = data.history || [];
+                updateHistoryList(history);
+            }
+        } catch (error) {
+            console.error('获取历史记录失败:', error);
+        }
+    }
+
+    // 读取CSV文件并解析数据
+    async function readCSVFile() {
+        try {
+            console.log('🔄 开始读取CSV文件...');
+            
+            // 尝试读取CSV文件
+            const response = await fetch('../ContourAgent-backend/coal.csv');
+            console.log('📊 CSV文件响应状态:', response.status, response.ok);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const csvText = await response.text();
+            console.log('📊 CSV文件大小:', csvText.length, '字符');
+            
+            // 解析CSV数据
+            const jsonData = parseCSV(csvText);
+            
+            console.log('📊 CSV数据读取成功:', jsonData.length, '条记录');
+            console.log('📊 数据示例:', jsonData[0]);
+            
+            return jsonData;
+        } catch (error) {
+            console.error('❌ 读取CSV文件失败:', error);
+            console.error('错误详情:', error.message, error.stack);
+            return null;
+        }
+    }
+
+    // 解析CSV文本为JSON数组
+    function parseCSV(csvText) {
+        const lines = csvText.trim().split('\n');
+        if (lines.length === 0) return [];
+        
+        // 获取表头
+        const headers = lines[0].split(',').map(h => h.trim());
+        
+        // 解析数据行
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            const values = line.split(',').map(v => v.trim());
+            const row = {};
+            
+            headers.forEach((header, index) => {
+                let value = values[index];
+                // 尝试转换为数字
+                if (!isNaN(value) && value !== '') {
+                    value = parseFloat(value);
+                }
+                row[header] = value;
+            });
+            
+            data.push(row);
+        }
+        
+        return data;
+    }
+
+    // 生成等值线图（直接使用CSV数据）
+    async function generateContourFromCSV(csvData, variable) {
+        if (!csvData || csvData.length === 0) {
+            throw new Error('CSV数据为空');
+        }
+
+        // 准备数据格式
+        const wellData = csvData.map(row => ({
+            well_name: row.well_name,
+            lon: parseFloat(row.lon),
+            lat: parseFloat(row.lat),
+            value: parseFloat(row[variable]) || parseFloat(row.lith_thickness) || parseFloat(row.ratio) || 0
+        })).filter(item => !isNaN(item.lon) && !isNaN(item.lat) && !isNaN(item.value));
+
+        console.log('📊 准备CSV数据:', wellData.length, '条记录');
+
+        // 模拟克里金插值和等值线生成
+        const geojson = generateMockGeoJSON(wellData, variable);
+        const imageData = await generateContourImage(geojson);
+
+        return {
+            dataResult: wellData,
+            geojsonResult: geojson,
+            imageResult: imageData
+        };
+    }
+
+    // 主界面发送消息（核心功能 - 调用后端Agent服务）
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const content = input.value.trim();
+        if (!content) return;
+
+        addMessage('user', content);
+        input.value = '';
+
+        showTestStatus('🔄 Processing...', 'loading');
+
+        try {
+            const startTime = Date.now();
+
+            // Check whether this is a CSV loading request
+            if (
+                content.includes('load CSV') ||
+                content.includes('read CSV') ||
+                content.includes('use CSV') ||
+                content.includes('coal.csv')
+            ) {
+                const csvData = await readCSVFile();
+                if (!csvData) {
+                    throw new Error('Unable to read coal.csv file');
+                }
+
+                addMessage('assistant', `📊 CSV data loaded successfully: ${csvData.length} records`);
+                addMessage('assistant', `📋 Fields: ${Object.keys(csvData[0]).join(', ')}`);
+
+                const preview = csvData.slice(0, 3);
+                addMessage('assistant', `🔍 Data preview:\n${JSON.stringify(preview, null, 2)}`);
+
+                showTestStatus('✅ CSV data loading completed', 'loading');
+                return;
+            }
+
+            // Chinese task: draw coal rock distribution map of Longtan Formation
+            if (
+                content.includes('绘制四川盆地龙潭组煤岩分布图') ||
+                content.includes('四川盆地龙潭组煤岩')
+            ) {
+                addMessage('assistant', '🔄 Executing task: coal rock distribution map of the Longtan Formation');
+
+                addMessage('assistant', '📊 Step 1: Reading coal.csv data...');
+                const csvData = await readCSVFile();
+                if (!csvData) {
+                    throw new Error('Unable to read coal.csv file');
+                }
+                addMessage('assistant', `✅ CSV data loaded successfully: ${csvData.length} records`);
+
+                addMessage('assistant', '📐 Step 2: Calling backend API for interpolation and mapping...');
+
+                const requestData = {
+                    text: content,
+                    csvData: csvData,
+                    variable: 'lith_thickness'
+                };
+
+                const response = await fetch(`${API_BASE}/task`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+                if (result.dataResult && result.dataResult.length > 0) {
+                    addMessage('assistant', `📊 Data processing completed: ${result.dataResult.length} well points`);
+                }
+
+                if (result.krigingResult) {
+                    // addMessage('assistant', '📐 Interpolation completed');
+                }
+
+                if (result.imageResult) {
+                    addMessage(
+                        'assistant',
+                        '✅ Coal rock distribution map of the Longtan Formation generated',
+                        'image',
+                        result.imageResult
+                    );
+                }
+
+                if (result.geojsonResult) {
+                    const geo = result.geojsonResult?.map ?? result.geojsonResult;
+
+                    addMessage('assistant', '🗺️ Contour vector data loaded to map');
+                    updateLegend(geo);
+
+                    try {
+                        displayGeoJSONOnMap(geo);
+                    } catch (e) {
+                        console.warn('GeoJSON rendering failed:', e);
+                        if (result.imageResult) {
+                            displayImageOnMap(result.imageResult);
+                        }
+                    }
+                }
+
+                showTestStatus(`✅ Map generation completed (${duration}s)`, 'loading');
+                return;
+            }
+
+            // English mapping request
+            if (
+                content.includes('Generate the coal rock distribution map') ||
+                content.includes('Longtan Formation') ||
+                content.includes('Sichuan Basin') ||
+                content.includes('Ordinary Kriging') ||
+                content.includes('spherical model')
+            ) {
+                const csvData = await readCSVFile();
+                if (!csvData) {
+                    throw new Error('Unable to read coal.csv file');
+                }
+
+                const requestData = {
+                    text: content,
+                    csvData: csvData,
+                    variable: 'lith_thickness'
+                };
+
+                const response = await fetch(`${API_BASE}/task`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+                if (result.dataResult && result.dataResult.length > 0) {
+                    addMessage('assistant', `📊 Data processing completed: ${result.dataResult.length} well points`);
+                }
+
+                if (result.krigingResult) {
+                    // addMessage('assistant', '📐 Interpolation completed');
+                }
+
+                if (result.imageResult) {
+                    addMessage(
+                        'assistant',
+                        '✅ Coal rock distribution map of the Longtan Formation generated',
+                        'image',
+                        result.imageResult
+                    );
+                    currentImage = result.imageResult;
+                    displayMapInRightPanel(result.imageResult);
+                }
+
+                if (result.geojsonResult) {
+                    addMessage('assistant', '🗺️ Contour vector data loaded to map');
+                    updateLegend(result.geojsonResult);
+
+                    try {
+                        const geo = result.geojsonResult?.map ?? result.geojsonResult;
+                        const rows = result.dataResult?.rows ?? [];
+                        displayGeoJSONOnMap(geo, rows);
+                        console.log('GeoJSON vector data rendered to map');
+                    } catch (e) {
+                        console.warn('GeoJSON rendering failed:', e);
+                        if (result.imageResult) {
+                            displayImageOnMap(result.imageResult);
+                        }
+                    }
+                }
+
+                showTestStatus(`✅ Map generation completed (${duration}s)`, 'loading');
+                return;
+            }
+
+            // Generic backend Agent call
+            addMessage('assistant', `🔄 Calling backend Agent service for: "${content}"`);
+
+            const response = await fetch(`${API_BASE}/task`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: content })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+            if (result.nlpResult) {
+                // addMessage('assistant', `📝 Parsed intent:\n${JSON.stringify(result.nlpResult, null, 2)}`);
+            }
+
+            if (result.plan) {
+                // addMessage('assistant', `📋 Execution plan: ${result.plan.pipeline.join(' → ')}`);
+            }
+
+            if (result.dataResult && result.dataResult.length > 0) {
+                // addMessage('assistant', `📊 Data loaded: ${result.dataResult.length} well points`);
+            }
+
+            if (result.krigingResult) {
+                // addMessage('assistant', '📐 Interpolation completed');
+            }
+
+            if (result.imageResult) {
+                addMessage('assistant', '✅ Contour map generated', 'image', result.imageResult);
+                currentImage = result.imageResult;
+                displayMapInRightPanel(result.imageResult);
+            }
+
+            if (result.geojsonResult) {
+                addMessage('assistant', '🗺️ Contour vector data loaded to map');
+                updateLegend(result.geojsonResult);
+
+                try {
+                    const geo = result.geojsonResult?.map ?? result.geojsonResult;
+                    const rows = result.dataResult?.rows ?? [];
+                    displayGeoJSONOnMap(geo, rows);
+                } catch (e) {
+                    console.warn('GeoJSON rendering failed:', e);
+                    if (result.imageResult) {
+                        addMessage('assistant', '⚠️ Vector rendering failed, showing image instead');
+                        displayImageOnMap(result.imageResult);
+                    }
+                }
+            }
+
+            if (result.feedbackParsed) {
+                addMessage('assistant', `🔄 Parsed feedback:\n${JSON.stringify(result.feedbackParsed, null, 2)}`);
+            }
+
+            showTestStatus(`✅ All tasks completed (${duration}s)`, 'loading');
+
+        } catch (err) {
+            showTestStatus(`❌ Error: ${err.message}`, 'error');
+            addMessage(
+                'assistant',
+                `❌ Error: ${err.message}\n\nPlease ensure:\n1. Backend service is running (cd ../ContourAgent-backend && python api.py)\n2. Service is available at http://127.0.0.1:8000`
+            );
+            console.error('Detailed error:', err);
+        }
+    }
+
+    // 文件上传处理
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        addMessage('assistant', '📊 文件上传中...');
+        showTestStatus('文件上传中...', 'loading');
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            // 简化处理，实际应使用xlsx库解析
+            const testData = [
+                { well_name: '测试井1', lon: 104.5, lat: 30.2, thickness: 100 },
+                { well_name: '测试井2', lon: 105.0, lat: 30.5, thickness: 150 },
+                { well_name: '测试井3', lon: 105.5, lat: 30.8, thickness: 200 }
+            ];
+
+            try {
+                const res = await fetch(`${API_BASE}/upload-excel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: testData })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showTestStatus('✅ Excel数据处理完成', 'loading');
+                    addMessage('assistant', '✅ Excel数据处理完成');
+
+                    if (data.imageResult) {
+                        addMessage('assistant', '✅ 等值线图已生成', 'image', data.imageResult);
+                        currentImage = data.imageResult;
+                    }
+                } else {
+                    showTestStatus(`❌ 文件处理失败: ${data.error || 'Unknown error'}`, 'error');
+                    addMessage('assistant', '❌ 文件处理失败: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                showTestStatus(`❌ 文件上传失败: ${err.message}`, 'error');
+                addMessage('assistant', '❌ 文件上传失败: ' + err.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // 键盘快捷键
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // 页面加载时检查API连接和初始化地图
+    window.addEventListener('load', async function() {
+        // 检查是否通过HTTP协议访问（避免file://的CORS问题）
+        if (window.location.protocol === 'file:') {
+            showTestStatus('⚠️ 请通过HTTP服务器访问此文件，避免CORS问题', 'error');
+            addMessage('assistant', '⚠️ 重要提示：请通过HTTP服务器访问此文件，例如使用VS Code的Live Server插件，或运行：python -m http.server 8080');
+            return;
+        }
+
+        // 初始化OpenLayers地图
+        try {
+            initOfflineMap();
+        } catch (error) {
+            console.warn('地图初始化失败:', error);
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/history?limit=1`, {
+                method: 'GET',
+                signal: AbortSignal.timeout(5000)
+            });
+            console.log('✅ API connection successful:', response.status);
+            showTestStatus('✅ API connection successful', 'loading');
+        } catch (error) {
+            console.warn('⚠️ API connection failed:', error.message);
+            showTestStatus('⚠️ API connection failed. Please check the backend service.', 'error');
+            addMessage(
+                'assistant',
+                '❌ Unable to connect to the backend service. Please ensure:\n' +
+                '1. The backend service is running (python api.py)\n' +
+                '2. The service is available at http://127.0.0.1:8000\n' +
+                '3. This page is accessed via HTTP protocol (not file://)'
+            );
+        }
+
+    });
+</script>
+</body>
+</html>

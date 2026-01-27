@@ -1,0 +1,44 @@
+{
+  "name": "palegeofont",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@turf/turf": "^7.2.0",
+    "axios": "^1.8.4",
+    "bootstrap": "^5.3.8",
+    "chroma-js": "^3.1.2",
+    "d3": "^7.9.0",
+    "d3-contour": "^4.0.2",
+    "d3-geo": "^3.1.1",
+    "dompurify": "^3.2.5",
+    "echarts": "^5.6.0",
+    "element-plus": "^2.9.7",
+    "git": "^0.1.5",
+    "highlight.js": "^11.11.1",
+    "kriging": "^0.1.12",
+    "marked": "^15.0.11",
+    "ol": "^10.5.0",
+    "openai": "^4.97.0",
+    "pdfjs-dist": "^2.16.105",
+    "plotly.js-dist-min": "^3.0.1",
+    "qs": "^6.14.0",
+    "shp-write": "^0.3.2",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "vuex": "^4.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "unplugin-auto-import": "^19.1.2",
+    "unplugin-vue-components": "^28.5.0",
+    "vite": "^6.3.3",
+    "xlsx": "^0.18.5"
+  }
+}
