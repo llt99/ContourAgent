@@ -96,7 +96,6 @@ ContourAgent/
 The backend API server must be running to process requests.
 
 ```bash
-cd ContourAgent-backend
 pip install -r requirements.txt
 python api.py
 ```
@@ -105,7 +104,6 @@ python api.py
 For rapid testing without launching the full frontend development environment, a lightweight HTML-based interface is provided.
 
 ```bash
-cd ContourAgent-frontend
 python start_http_server.py
 ```
 > **Note:** Then open `test-quick.html` via the local HTTP server address printed in the console.
